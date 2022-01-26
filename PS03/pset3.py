@@ -26,11 +26,29 @@ class PSet3():
 		# ex: return [1,2,3,5,10]
 
 
-class Variable():
-	def __init__(self, name):
-		self.name = name
-		self.domain = None
-		self.constr = None
+def final_constrained(node, constraints):
+	for i in range(0, len(node)):
+	# iterate through all the values of the node
+		value_i = node[i]
+		for j in range(0, len(node)):
+		# iterate through all the nodes, except itself
+			value_j = node[j]
+			if i == j:
+				continue
+
+			# get the constraint dictionary
+			allowed_values = constraints[i][j].get(value_i)		
+			'''
+			allowed_values (list) 
+				This list represents all the values that node can take at index j
+				given that node at index i has the current value
+			'''
+			try:
+				# will throw an error if it doen't exist
+				allowed_values.index(value_j)
+			except:
+				return False
+	return True
 
 def cmap(n):
 	c = np.ndarray((n, n), dtype=dict)
@@ -79,11 +97,7 @@ def constrained(node, constraints, domains):
 			domains_cpy[i] = list(inter_set)
 
 	return True
-'''
-	for d in domains_cpy:
-		if d == set():
-			return False
-'''
+
 
 def constrained_bt(node, domains, constraints):
 	domains_cpy = copy.deepcopy(domains)
@@ -126,29 +140,7 @@ def initialize_parameters(n):
 	return nodes, domains, constraints
 
 
-def final_constrained(node, constraints):
-	for i in range(0, len(node)):
-	# iterate through all the values of the node
-		value_i = node[i]
-		for j in range(0, len(node)):
-		# iterate through all the nodes, except itself
-			value_j = node[j]
-			if i == j:
-				continue
 
-			# get the constraint dictionary
-			allowed_values = constraints[i][j].get(value_i)		
-			'''
-			allowed_values (list) 
-				This list represents all the values that node can take at index j
-				given that node at index i has the current value
-			'''
-			try:
-				# will throw an error if it doen't exist
-				allowed_values.index(value_j)
-			except:
-				return False
-	return True
 
 
 def solve_n_queens(n):
@@ -249,5 +241,7 @@ def solve_bt(node, domains, constraints):
 
 
 
-
-solve_n_queens(8)
+for n in range(4, 5):
+	nodes, domains, constraints = initialize_parameters(n)
+	ans = solve_bt(nodes[0], domains, constraints)
+	assert final_constrained(ans, constraints) == True, "1. BT incorrect answer"
