@@ -126,6 +126,31 @@ def initialize_parameters(n):
 	return nodes, domains, constraints
 
 
+def final_constrained(node, constraints):
+	for i in range(0, len(node)):
+	# iterate through all the values of the node
+		value_i = node[i]
+		for j in range(0, len(node)):
+		# iterate through all the nodes, except itself
+			value_j = node[j]
+			if i == j:
+				continue
+
+			# get the constraint dictionary
+			allowed_values = constraints[i][j].get(value_i)		
+			'''
+			allowed_values (list) 
+				This list represents all the values that node can take at index j
+				given that node at index i has the current value
+			'''
+			try:
+				# will throw an error if it doen't exist
+				allowed_values.index(value_j)
+			except:
+				return False
+	return True
+
+
 def solve_n_queens(n):
 	nodes, domains, constraints = initialize_parameters(n)
 	while(True):
@@ -140,7 +165,7 @@ def solve_n_queens(n):
 			if assigned(popped_node):
 
 				# check if satisfies constraints
-				if constrained(popped_node, constraints, domains):
+				if final_constrained(popped_node, constraints):
 					print(popped_node)
 					break
 			else:
@@ -152,36 +177,6 @@ def solve_n_queens(n):
 					temp_node = copy.deepcopy(popped_node) 
 					temp_node[idx] = n - i - 1 
 					nodes.insert(0, temp_node)			
-
-solve_n_queens(3)
-
-'''
-def solve_bt(n, nodes, domains, constraints):
-	while (True):
-		if nodes == []:
-			return None
-		else:
-			popped_node = nodes.pop(0)		# pop node from the queue
-			new_domains = constrained_bt(popped_node, domains, constraints)
-			if new_domains != None:	
-			# check if node is constrained
-				if assigned(popped_node):
-					# if node is completeley assigned, this is the answer
-					return popped_node
-				else:
-					# get the index of unassigned value in the node (represented by -1)
-					idx = popped_node.index(-1)
-
-					# add neighbors (make all possible assignments)
-					for i in range(0, n):
-						temp_node = copy.deepcopy(popped_node) 
-						temp_node[idx] = n - i - 1
-						nodes.insert(0, temp_node)			
-						new_domains[idx] = [n - i - 1]
-						return solve_bt(n, nodes, new_domains, constraints)
-			else:
-				return None
-'''
 
 def revise(node, domains, constraints):
 	new_domains = copy.deepcopy(domains)
@@ -253,10 +248,6 @@ def solve_bt(node, domains, constraints):
 			return None
 
 
-n = 15
-nodes, domains, constraints = initialize_parameters(n)
-
-ans = solve_bt(nodes[0], domains, constraints)
-print(ans)
 
 
+solve_n_queens(8)
