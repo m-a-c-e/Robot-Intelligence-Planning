@@ -1,3 +1,4 @@
+from xml import dom
 import numpy as np
 import copy
 
@@ -85,6 +86,37 @@ def constrained(node, constraints, domains):
 			return False
 '''
 
+def constrained_bt(node, domains, constraints):
+	domains_cpy = copy.deepcopy(domains)
+	for j in range(0, len(node)):
+		# iterate through all indices of node / if -1 is encountered end
+		if node[j] == -1:
+			break
+		if not (node[j] in domains_cpy[j]):
+			# assignment not possible
+			return None
+		
+		for i in range(0, len(node)):
+			# iterate through the constraints between node at j and i
+			# skip the indices of constraints where they represent the same variable: (1, 1), (2, 2), ... , (n, n)
+			if i == j:
+				continue
+
+			dict_c = constraints[j][i]	# get all the constraints for node at j and i
+			set_c = set(dict_c.get(node[j]))	# get the available values for node at i based on
+												# the assigned value at j (node[j])
+			d_set = domains_cpy[i]		# get the set of current available values for node at i
+			inter_set = set_c.intersection(d_set)	# check if intersection is possible
+			if inter_set == set():
+				# inconsistent assignment, break 
+				return None
+			else:
+				# update the domains and continue
+				domains_cpy[i] = list(inter_set)
+	
+	# if all domains are non-empty
+	return domains_cpy
+
 
 
 def initialize_parameters(n):
@@ -123,3 +155,37 @@ def solve_n_queens(n):
 					nodes.insert(0, temp_node)			
 
 solve_n_queens(3)
+
+def solve_bt(n, nodes, domains, constraints):
+	while (True):
+		if nodes == []:
+			return None
+		else:
+			popped_node = nodes.pop(0)		# pop node from the queue
+			new_domains = constrained_bt(popped_node, domains, constraints)
+			if new_domains != None:	
+			# check if node is constrained
+				if assigned(popped_node):
+					# if node is completeley assigned, this is the answer
+					return popped_node
+				else:
+					# get the index of unassigned value in the node (represented by -1)
+					idx = popped_node.index(-1)
+
+					# add neighbors (make all possible assignments)
+					for i in range(0, n):
+						temp_node = copy.deepcopy(popped_node) 
+						temp_node[idx] = n - i - 1
+						nodes.insert(0, temp_node)			
+					return solve_bt(n, nodes, new_domains, constraints)
+			else:
+				return None
+	 
+
+n = 3
+nodes, domains, constraints = initialize_parameters(n)
+
+ans = solve_bt(4, nodes, domains, constraints)
+print(ans)
+
+
