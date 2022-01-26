@@ -238,7 +238,7 @@ def solve_bt(node, domains, constraints):
 				# if in the new_domains, only one element is left,
 				# assing that value to the node at that index
 				if len(new_domains[i]) == 1:
-					node[i] == new_domains[i][0]
+					node[i] = new_domains[i][0]
 			
 			ans = solve_bt(temp_node, new_domains, constraints)
 			if ans != None:
@@ -253,7 +253,7 @@ def solve_bt(node, domains, constraints):
 			return None
 
 
-n = 16
+n = 15
 nodes, domains, constraints = initialize_parameters(n)
 
 ans = solve_bt(nodes[0], domains, constraints)
