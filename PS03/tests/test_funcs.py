@@ -33,4 +33,11 @@ def test_solve_4_queens():
 
     for i in range(4, 9):
         solve_n_queens(i)
+
+def test_constrained_6queens():
+    n = 6
+    nodes, domains, constraints = initialize_parameters(n)
+    ans = [0, 2, 4, 6, 1, 3, 5]
+
+    assert constrained(ans, domains, constraints) == True
     

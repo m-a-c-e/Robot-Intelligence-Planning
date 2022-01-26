@@ -1,4 +1,3 @@
-from xml import dom
 import numpy as np
 import copy
 
@@ -156,6 +155,7 @@ def solve_n_queens(n):
 
 solve_n_queens(3)
 
+'''
 def solve_bt(n, nodes, domains, constraints):
 	while (True):
 		if nodes == []:
@@ -177,15 +177,86 @@ def solve_bt(n, nodes, domains, constraints):
 						temp_node = copy.deepcopy(popped_node) 
 						temp_node[idx] = n - i - 1
 						nodes.insert(0, temp_node)			
-					return solve_bt(n, nodes, new_domains, constraints)
+						new_domains[idx] = [n - i - 1]
+						return solve_bt(n, nodes, new_domains, constraints)
 			else:
 				return None
-	 
+'''
 
-n = 3
+def revise(node, domains, constraints):
+	new_domains = copy.deepcopy(domains)
+	for i in range(0, len(node)):
+		if node[i] != -1:
+			new_domains[i] = [node[i]]
+
+	i = 0				# i corresponds to index of domains
+	for d_list in new_domains:
+		# iterate through domains of all variables
+		for j in range(0, len(node)):
+			# for each node
+			if i == j:
+				continue
+			set_intrsec = set()
+			for d_val in d_list:
+				# iterate through values inside domains
+				# get the constraints
+				set_i = set(constraints[i][j].get(d_val))
+				set_j = set(new_domains[j])
+				set_x = set_j.intersection(set_i)
+				set_intrsec = set_x.union(set_intrsec)
+			new_domains[j] = list(set_intrsec)
+			if new_domains[j] == []:
+				return None
+		i += 1
+	return new_domains
+
+
+def solve_bt(node, domains, constraints):
+		# try to assign a value
+	idx = -1		
+	for i in range(0, len(node)):
+		if node[i] == -1:
+			idx = i
+			break
+		
+	if idx != -1:
+
+		if domains == None:
+			return None
+
+		# assign values from 0 to n - 1 at idx of the node
+		# update the domains based on assignment
+		# call solve_bt
+		for value in range(0, len(node)):
+			temp_node = copy.deepcopy(node)
+			temp_node[idx] = value
+			new_domains = revise(temp_node, domains, constraints)
+			if new_domains == None:
+				continue
+
+			for i in range(0, len(node)):
+				# if in the new_domains, only one element is left,
+				# assing that value to the node at that index
+				if len(new_domains[i]) == 1:
+					node[i] == new_domains[i][0]
+			
+			ans = solve_bt(temp_node, new_domains, constraints)
+			if ans != None:
+				return ans
+	else:
+		# value cannot be assigned
+		if domains != None:
+			# this is the answer
+			return (copy.deepcopy(node))
+		else:
+			# inconsistant final value
+			return None
+
+
+n = 16
 nodes, domains, constraints = initialize_parameters(n)
 
-ans = solve_bt(4, nodes, domains, constraints)
+ans = solve_bt(nodes[0], domains, constraints)
 print(ans)
 
 
