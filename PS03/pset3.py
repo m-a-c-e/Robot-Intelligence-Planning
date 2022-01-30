@@ -1,15 +1,89 @@
 import numpy as np
 import copy
+import time
+import math
+
+def cmap(n):
+	c = np.ndarray((n, n), dtype=dict)
+	for i in range(0, n):
+		for j in range(0, n):
+			dic = {}
+			if i == j:
+				continue
+			for x in range(0, n):
+				y_list = []
+				for y in range(0, n):
+					if x == y:
+						continue
+					if abs(i - j) == abs(x - y):
+						continue
+					y_list.append(y)
+				dic[x] = y_list
+			c[i][j] = dic
+	return c
+
 
 class PSet3():
+	def __init__(self):
+		self.n 			 = None
+		self.domains  	 = None
+		self.constraints = None
+		self.nodes 		 = None
 
-	def standard(self):
-		pass
+	def initialize_parameters(self, n):
+		self.domains = [[i for i in range(0, n)] for i in range(0, n)]
+		self.constraints = cmap(n)
+		self.nodes = [[-1] * n] * n
+
+	def standard(self, n=1, test=False):
+		if not test:
+			n = 1
+		time_list = []
+		timer_flag = False
+		while(not timer_flag):
+		# Iterate forever untill time limit is exceeded
+			start_time = time.time()
+			self.initialize_parameters(n)
+
+			# Standard method
+			while(True):
+				if time.time() - start_time >= 10:
+					timer_flag = True
+					break
+				if self.nodes == []:
+					break
+				else:
+					# pop the first node
+					popped_node = self.nodes.pop(0)
+
+					# check if compelete assignment is there
+					if assigned(popped_node):
+
+						# check if satisfies constraints
+						if final_constrained(popped_node, self.constraints):
+							break
+					else:
+						# get the index of unassigned node
+						idx = popped_node.index(-1)
+
+						# add neighbors
+						for i in range(0, n):
+							temp_node = copy.deepcopy(popped_node) 
+							temp_node[idx] = n - i - 1 
+							self.nodes.insert(0, temp_node)
+
+			n += 1
+			time_list.append(time.time() - start_time)
+
+			if test:
+				return time.time() - start_time
+
+		return time_list
 		# return a list of the time taken for each value of n
 		# ex: return [1,2,3,5,10]
 
 	def BT(self):
-		pass
+		pasjs
 		# return a list of the time taken for each value of n
 		# ex: return [1,2,3,5,10]
 
@@ -50,24 +124,7 @@ def final_constrained(node, constraints):
 				return False
 	return True
 
-def cmap(n):
-	c = np.ndarray((n, n), dtype=dict)
-	for i in range(0, n):
-		for j in range(0, n):
-			dic = {}
-			if i == j:
-				continue
-			for x in range(0, n):
-				y_list = []
-				for y in range(0, n):
-					if x == y:
-						continue
-					if abs(i - j) == abs(x - y):
-						continue
-					y_list.append(y)
-				dic[x] = y_list
-			c[i][j] = dic
-	return c
+
 
 def assigned(node):
 	for i in range(0, len(node)):
@@ -170,6 +227,75 @@ def solve_n_queens(n):
 					temp_node[idx] = n - i - 1 
 					nodes.insert(0, temp_node)			
 
+def revise_BTFC(node, domains, constraints):
+	new_domains = copy.deepcopy(domains)
+	'''
+	for i in range(0, len(node)):
+		if node[i] != -1:
+			new_domains[i] = [node[i]]
+	'''
+	
+	# need to update domains only for the updated variable
+	# get the index of updated node
+	# node with -1 as value, minus 1
+	idx = node.index(-1) - 1
+	new_domains[idx] = [node[idx]]
+	value_n = node[idx]
+
+	for i in range(idx + 1, len(node)):
+		# update domains as you iterate through nodes which havent
+		# been assigned yet 
+		curr_set_i = set(new_domains[i])
+		valid_set_i = set(constraints[idx][i].get(value_n))
+		intersec_set = curr_set_i.intersection(valid_set_i)
+		# if not possible, backtrack
+		if intersec_set == set():
+			return None
+		new_domains[i] = list(intersec_set)
+	return new_domains
+
+
+def solve_BTFC(node, domains, constraints):
+	idx = -1		
+	for i in range(0, len(node)):
+		if node[i] == -1:
+			idx = i
+			break
+		
+	if idx != -1:
+
+		if domains == None:
+			return None
+
+		# assign values from 0 to n - 1 at idx of the node
+		# update the domains based on assignment
+		# call solve_bt
+		for value in range(0, len(node)):
+			temp_node = copy.deepcopy(node)
+			temp_node[idx] = value
+			new_domains = revise_BTFC(temp_node, domains, constraints)
+			if new_domains == None:
+				continue
+
+			for i in range(0, len(node)):
+				# if in the new_domains, only one element is left,
+				# assing that value to the node at that index
+				if len(new_domains[i]) == 1:
+					node[i] = new_domains[i][0]
+			
+			ans = solve_bt(temp_node, new_domains, constraints)
+			if ans != None:
+				return ans
+	else:
+		# value cannot be assigned
+		if domains != None:
+			# this is the answer
+			return (copy.deepcopy(node))
+		else:
+			# inconsistant final value
+			return None
+
+
 def revise(node, domains, constraints):
 	new_domains = copy.deepcopy(domains)
 	for i in range(0, len(node)):
@@ -198,8 +324,31 @@ def revise(node, domains, constraints):
 	return new_domains
 
 
+def revise_bt(node, domains, constraints):
+	idx_n = -1
+	for i in range(0, len(node)):
+		if node[i] == -1:
+			idx_n = i - 1
+			break
+	
+	value_n = node[idx_n]
+	for i in range(0, idx_n - 1):
+	# iterate through all the assignments that have been made
+	# check if consistent with it
+		value_i = node[i]
+		set_i = set(constraints[i][idx_n].get(value_i))
+		set_n = set(value_n)
+		set_intersec = set_n.intersection(set_i)
+		if set_intersec == set():
+			return None
+	
+	domains[idx_n] = list(set_intersec)
+	return domains 
+
+
+
 def solve_bt(node, domains, constraints):
-		# try to assign a value
+	# try to assign a value
 	idx = -1		
 	for i in range(0, len(node)):
 		if node[i] == -1:
@@ -241,7 +390,6 @@ def solve_bt(node, domains, constraints):
 
 
 
-for n in range(4, 5):
-	nodes, domains, constraints = initialize_parameters(n)
-	ans = solve_bt(nodes[0], domains, constraints)
-	assert final_constrained(ans, constraints) == True, "1. BT incorrect answer"
+obj = PSet3()
+time_list = obj.standard(3)
+print(time_list)
