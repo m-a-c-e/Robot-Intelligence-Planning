@@ -1,7 +1,14 @@
+"""
+Author: 	 Manan Patel
+Colaborator: Shrihari Subramanian
+"""
+
+
 import numpy as np
 import copy
 import time
-import math
+
+
 
 def cmap(n):
 	c = np.ndarray((n, n), dtype=dict)
@@ -29,15 +36,19 @@ class PSet3():
 		self.domains  	 = None
 		self.constraints = None
 		self.nodes 		 = None
+		self.time_limit  = 600		# seconds
+		self.start_time = None
+		self.timer_flag = False
 
 	def initialize_parameters(self, n):
-		self.domains = [[i for i in range(0, n)] for i in range(0, n)]
+		self.domains 	 = [[i for i in range(0, n)] for i in range(0, n)]
 		self.constraints = cmap(n)
-		self.nodes = [[-1] * n] * n
+		self.nodes 		 = [[-1] * n] * n
+		self.node 		 = self.nodes[0]
 
-	def standard(self, n=1, test=False):
+	def standard(self, n=4, test=False):
 		if not test:
-			n = 1
+			n = 4
 		time_list = []
 		timer_flag = False
 		while(not timer_flag):
@@ -47,7 +58,7 @@ class PSet3():
 
 			# Standard method
 			while(True):
-				if time.time() - start_time >= 10:
+				if time.time() - start_time >= self.time_limit:
 					timer_flag = True
 					break
 				if self.nodes == []:
@@ -79,25 +90,69 @@ class PSet3():
 				return time.time() - start_time
 
 		return time_list
-		# return a list of the time taken for each value of n
-		# ex: return [1,2,3,5,10]
 
-	def BT(self):
-		pasjs
-		# return a list of the time taken for each value of n
-		# ex: return [1,2,3,5,10]
+	def standard_return(self):
+		n_list = list(np.arange(4, 12, 1))
+		return n_list
 
+	def BT(self, n=4, test=False):
+	
+		if not test:
+			n = 4
 
-	def BT_w_FC(self):
-		pass
-		# return a list of the time taken for each value of n
-		# ex: return [1,2,3,5,10]
+		time_list = []
+		while not self.timer_flag:
+			self.timer_flag = False
+			self.initialize_parameters(n)
+			self.start_time = time.time()
+			ans = solve_bt(self, self.node, self.domains, self.constraints)
+			time_list.append(time.time() - self.start_time)
+			n += 1
+			if test:
+				return time_list[0]
+		return time_list
 
+	def BT_return(self):
+		n_list = list(np.arange(4, 25, 1))
+		return n_list
 
-	def iterative_repair(self):
-		pass
-		# return a list of the time taken for each value of n
-		# ex: return [1,2,3,5,10]
+	def BT_w_FC(self, n=4, test=False):
+		if not test:
+			n = 4
+		time_list = []
+		while not self.timer_flag:
+			self.timer_flag = False
+			self.initialize_parameters(n)
+			self.start_time = time.time()
+			ans = solve_BTFC(self, self.node, self.domains, self.constraints)
+			time_list.append(time.time() - self.start_time)
+			n += 1
+			if test:
+				return time_list[0]
+		return time_list
+
+	def BT_w_FC_return(self):
+		n_list = list(np.arange(4, 31, 1))
+		return n_list
+
+	def iterative_repair(self, n=4, test=False):
+		if not test:
+			n = 4
+		time_list = []
+		while not self.timer_flag:
+			self.timer_falg = False
+			self.initialize_parameters(n)
+			self.start_time = time.time()
+			ans = solve_IR(self, n)
+			time_list.append(time.time() - self.start_time)
+			n += 1
+			if test:
+				return time_list[0]
+		return time_list
+
+	def iterative_repair_return(self):
+		n_list = list(np.arange(4, 16, 1))
+		return n_list
 
 
 def final_constrained(node, constraints):
@@ -123,7 +178,6 @@ def final_constrained(node, constraints):
 			except:
 				return False
 	return True
-
 
 
 def assigned(node):
@@ -188,16 +242,12 @@ def constrained_bt(node, domains, constraints):
 	return domains_cpy
 
 
-
 def initialize_parameters(n):
 	domains = [[i for i in range(0, n)] for i in range(0, n)]
 	constraints = cmap(n)
 	nodes = [[-1] * n] * n
 	
 	return nodes, domains, constraints
-
-
-
 
 
 def solve_n_queens(n):
@@ -227,6 +277,7 @@ def solve_n_queens(n):
 					temp_node[idx] = n - i - 1 
 					nodes.insert(0, temp_node)			
 
+
 def revise_BTFC(node, domains, constraints):
 	new_domains = copy.deepcopy(domains)
 	'''
@@ -238,7 +289,14 @@ def revise_BTFC(node, domains, constraints):
 	# need to update domains only for the updated variable
 	# get the index of updated node
 	# node with -1 as value, minus 1
-	idx = node.index(-1) - 1
+	#idx = node.index(-1) - 1
+
+	idx = len(node) - 1
+	for i in range(0, len(node)):
+		if node[i] == -1:
+			idx = i - 1
+			break
+
 	new_domains[idx] = [node[idx]]
 	value_n = node[idx]
 
@@ -255,7 +313,11 @@ def revise_BTFC(node, domains, constraints):
 	return new_domains
 
 
-def solve_BTFC(node, domains, constraints):
+def solve_BTFC(obj, node, domains, constraints):
+	if time.time() - obj.start_time >= obj.time_limit:
+		obj.timer_flag = True
+		return None
+
 	idx = -1		
 	for i in range(0, len(node)):
 		if node[i] == -1:
@@ -269,22 +331,15 @@ def solve_BTFC(node, domains, constraints):
 
 		# assign values from 0 to n - 1 at idx of the node
 		# update the domains based on assignment
-		# call solve_bt
-		for value in range(0, len(node)):
-			temp_node = copy.deepcopy(node)
+		for value in domains[idx]:
+			temp_node 	   = copy.deepcopy(node)
 			temp_node[idx] = value
-			new_domains = revise_BTFC(temp_node, domains, constraints)
+			new_domains    = revise_BTFC(temp_node, domains, constraints)
 			if new_domains == None:
 				continue
 
-			for i in range(0, len(node)):
-				# if in the new_domains, only one element is left,
-				# assing that value to the node at that index
-				if len(new_domains[i]) == 1:
-					node[i] = new_domains[i][0]
-			
-			ans = solve_bt(temp_node, new_domains, constraints)
-			if ans != None:
+			ans = solve_BTFC(obj, temp_node, new_domains, constraints)
+			if ans != None or obj.timer_flag:
 				return ans
 	else:
 		# value cannot be assigned
@@ -325,29 +380,32 @@ def revise(node, domains, constraints):
 
 
 def revise_bt(node, domains, constraints):
-	idx_n = -1
+	idx_n = len(node) - 1
 	for i in range(0, len(node)):
 		if node[i] == -1:
 			idx_n = i - 1
 			break
 	
 	value_n = node[idx_n]
-	for i in range(0, idx_n - 1):
+	for i in range(0, idx_n):
 	# iterate through all the assignments that have been made
 	# check if consistent with it
 		value_i = node[i]
 		set_i = set(constraints[i][idx_n].get(value_i))
-		set_n = set(value_n)
+		set_n = set([value_n])
 		set_intersec = set_n.intersection(set_i)
 		if set_intersec == set():
 			return None
 	
-	domains[idx_n] = list(set_intersec)
+	domains[idx_n] = [node[idx_n]]
 	return domains 
 
 
-
-def solve_bt(node, domains, constraints):
+def solve_bt(obj, node, domains, constraints):
+	if time.time() - obj.start_time >= obj.time_limit:
+		obj.timer_flag = True
+		return None
+	
 	# try to assign a value
 	idx = -1		
 	for i in range(0, len(node)):
@@ -366,30 +424,210 @@ def solve_bt(node, domains, constraints):
 		for value in range(0, len(node)):
 			temp_node = copy.deepcopy(node)
 			temp_node[idx] = value
-			new_domains = revise(temp_node, domains, constraints)
+			new_domains = revise_bt(temp_node, domains, constraints)
 			if new_domains == None:
 				continue
 
-			for i in range(0, len(node)):
-				# if in the new_domains, only one element is left,
-				# assing that value to the node at that index
-				if len(new_domains[i]) == 1:
-					node[i] = new_domains[i][0]
-			
-			ans = solve_bt(temp_node, new_domains, constraints)
-			if ans != None:
+			ans = solve_bt(obj, temp_node, new_domains, constraints)
+			if ans != None or obj.timer_flag:
 				return ans
 	else:
 		# value cannot be assigned
 		if domains != None:
 			# this is the answer
-			return (copy.deepcopy(node))
+			return copy.deepcopy(node)
 		else:
 			# inconsistant final value
 			return None
 
 
+def get_conflicts(v1, v2, i1, i2, constraints):
+	valid_values = constraints[i1][i2].get(v1)
+	try:
+		valid_values.index(v2)
+	except:
+		return 1
+	return 0
+
+
+def get_total_conflicts(node, idx, constraints):
+	"""
+	node:	variable assignment
+	idx:	variable against which will be checked
+	"""
+	counter = 0
+	for i in range(0, len(node)):
+		if i == idx:
+			continue
+		valid_values = constraints[idx][i].get(node[i])
+		try:
+			valid_values.index(node[idx])
+		except:
+			counter += 1
+	return counter
+
+
+def get_node_idx(node, constraints):
+	conflict_list = []
+	for i in range(0, len(node)):
+		conflicts_j = 0
+		for j in range(0, len(node)):
+			if i == j:
+				continue
+			# get the valid values between i and j
+			valid_values = constraints[i][j].get(node[i])
+
+			try:
+				valid_values.index(node[j])		# will throw an error if does not exist in the list
+			except:
+				conflicts_j += 1
+		conflict_list.append(conflicts_j)
+	idx = pick_idx(conflict_list)
+
+	return idx
+
+
+def pick_idx(conflict_list):
+	conflict_list = np.array(conflict_list)
+	max_conflict = np.amax(conflict_list)
+	idx_arr 	 = np.where(conflict_list == max_conflict)[0]					# indices where max conflict
+	idx 		 = np.random.choice(idx_arr)
+
+	return idx, max_conflict
+
+
+def min_conflict_value(node, idx, constraints):
+	conflict_list = []	
+	for value in range(0, len(node)):
+		conflict = 0
+		for j in range(0, len(node)):
+			if j == idx:
+				continue
+			conflict += (get_conflicts(value, node[j], idx, j, constraints))
+		conflict_list.append(conflict)
+	conflict_list = np.array(conflict_list)
+	min_value = np.amin(conflict_list)
+
+	return min_value
+
+
+def new_min_conflict_value(node, idx, constraints):
+	conflict_list = []
+	for value in range(0, len(node)):
+		conflict = 0
+		for j in range(0, len(node)):
+			if j == idx:
+				continue
+
+
+def solve_IR(node, n, constraints):
+	ans = None
+	while True:
+		if ans == None:
+			node = list(np.random.randint(0, n, n, dtype=int))
+
+		# get node index with highest conflict
+		idx, num = get_node_idx(node, constraints)
+		
+		if num == 0:
+			# return node
+			ans = node
+			return ans
+
+		# pick a vlaue for the node at idx which reduces the conflicts to <= num
+		min_value = min_conflict_value(node, idx, constraints)	
+		if min_value < num and min_value != node[idx]:
+			# proceed by updating the value
+			node[idx] = min_value
+			ans = solve_IR(node, n, constraints)
+			return ans
+		else:
+			node = None
+
+
+def get_idx_value(node, n, constraints):
+	"""
+	node:			current variable assignment
+	constraints:	dictionaries of constraint relations
+	idx: 			represents the variable for which the constraints are being checked 
+	"""
+	if node == []:
+		node = np.arange(0, n, 1)
+		np.random.shuffle(node)
+		node = list(node)
+
+	# current conflict list
+	curr_conf_list = []
+	for i in range(0, len(node)):
+		value = get_total_conflicts(node, i, constraints)
+		curr_conf_list.append(get_total_conflicts(node, i, constraints))
+	
+	check_list = [0] * len(node)
+
+	if curr_conf_list == check_list:
+		return (True, node)
+	
+	# try possible values for node at index i and see if less conflicts possible
+	new_conf_list = []
+	new_value_list = []
+	for i in range(0, len(node)):
+		conf = -1
+		new_value = -1
+		for value in range(0, len(node)):
+			node_cpy 	= copy.deepcopy(node)
+			node_cpy[i] = value
+			c = get_total_conflicts(node_cpy, i, constraints)
+			if conf == -1:
+				conf = c
+				new_value = value
+			elif c < conf:
+				conf = c
+				new_value = value
+		new_conf_list.append(conf)
+		new_value_list.append(new_value)
+	
+	diff_list = np.array(curr_conf_list) - np.array(new_conf_list) 
+	max_diff = np.amax(diff_list)
+	idx = np.random.choice(np.where(diff_list == max_diff)[0])
+
+	if node[idx] == value or max_diff == 0:
+		return False, []
+	else:
+		node[idx] = value
+		return False, node
+
+
+def solve_IR(obj, n):
+	node = []
+	stop_flag = False
+	while not stop_flag:
+		(stop_flag, node) = get_idx_value(node, n, obj.constraints)
+		if time.time() - obj.start_time > obj.time_limit:
+			obj.timer_flag = True
+			return None
+	return node
+
+
 
 obj = PSet3()
-time_list = obj.standard(3)
-print(time_list)
+print(obj.standard_return())
+print(obj.BT_return())
+print(obj.BT_w_FC_return())
+print(obj.iterative_repair_return())
+#Y1 = obj.standard(11, False)
+#X1 = list(np.arange(4, 4 + len(Y1), 1))
+
+# Y2 = obj.BT(30, False)
+#X2 = list(np.arange(4, 4 + len(Y2), 1))
+
+#Y3 = obj.BT_w_FC(4, False)
+# X3 = list(np.arange(4, 4 + len(Y3), 1))
+
+
+#Y4 = obj.iterative_repair(4, False)
+#X4 = list(np.arange(4, 4 + len(Y4), 1))
+
+# import pandas as pd
+#pd.DataFrame(Y2).to_csv('BT.csv')
+#print("hello")
+
