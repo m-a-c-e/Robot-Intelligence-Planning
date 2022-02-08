@@ -146,12 +146,7 @@ class PSet4():
 
         returns: a list of Action as Strings , or None if problem is infeasible
         """
-        domprob = pddlpy.DomainProblem('domain.pddl', 'problem.pddl')
-        print(domprob.initialstate())
-        print(domprob.operators())
-
-
-        planning_graph = PlanningGraph('domain.pddl', 'problem.pddl')
+        planning_graph = PlanningGraph(domain_file, problem_file)
         graph          = planning_graph.create()
         goal           = planning_graph.goal
         graph_planner  = GraphPlanner()
@@ -163,10 +158,6 @@ class PSet4():
                 op  = x.operator_name
                 if op == 'NoOp':
                     continue
-                '''
-                prop= x.precondition_pos
-                var = x.variable_list
-                '''
                 final_plan.append(op)
 
         return final_plan
@@ -181,8 +172,10 @@ class PSet4():
            should be the start node, the last item should be the goal node. If no
            path could be found, return None
         """
+        ''' Uncomment to see graph
         plt.plot([1], [1], label='S', marker='X', markersize=10, color='g')
         plt.plot(9, 9, label='G', marker='X', markersize=10, color='g')
+        '''
 
         for i in range(0, len(corners)):
             corner1 = corners[i]
