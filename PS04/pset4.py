@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from shapely.geometry import LineString
 from dfs_yes import *
 
+from planning_graph.planning_graph import PlanningGraph
+from planning_graph.planning_graph_planner import GraphPlanner
+
 
 class Node:
     """
@@ -114,6 +117,9 @@ def path_exists(nearest_node, rand_node, corners):
     pt2         = (rand_node.x, rand_node.y)
     pt_line     = LineString([pt1, pt2])
 
+    if len(corners) < 4:
+        return True
+
     for i in range(0, len(corners)):
         corner1 = corners[i]
         if i == len(corners) - 1:
@@ -140,14 +146,30 @@ class PSet4():
 
         returns: a list of Action as Strings , or None if problem is infeasible
         """
-
-        plan = ['Action 1','Action 2'] 
-        domprob = pddlpy.DomainProblem(domain_file, problem_file)
+        domprob = pddlpy.DomainProblem('domain.pddl', 'problem.pddl')
         print(domprob.initialstate())
         print(domprob.operators())
-        print(domprob.worldobjects())
-        print(domprob.goals())
-        return plan
+
+
+        planning_graph = PlanningGraph('domain.pddl', 'problem.pddl')
+        graph          = planning_graph.create()
+        goal           = planning_graph.goal
+        graph_planner  = GraphPlanner()
+        plan = graph_planner.plan(graph, goal)
+
+        final_plan = []
+        for plan_obj in plan.data.values():
+            for x in plan_obj._plan:
+                op  = x.operator_name
+                if op == 'NoOp':
+                    continue
+                '''
+                prop= x.precondition_pos
+                var = x.variable_list
+                '''
+                final_plan.append(op)
+
+        return final_plan
 
     def solve_rrt(self, corners):
         """
@@ -178,9 +200,8 @@ class PSet4():
         goal_loc   = (9, 9)
         goal_node  = Node(goal_loc[0], goal_loc[1])
 
-        iterations = 100
+        iterations = 1000
         room       = Rectangle(0, 0, 10, 10)
-        obj        = Rectangle(3, 3, 7, 7)
         e          = 0.10                       # probability with which goal will be sampled
 
         # initialize graph with start node
@@ -201,7 +222,7 @@ class PSet4():
                 graph.add_edge(nearest_node, rand_node)
                 plt.plot([nearest_node.x, rand_node.x], [nearest_node.y, rand_node.y], color='b')
 
-        # uncomment to see the graph
+#        uncomment to see the graph
 #        plt.show()
 #        plt.autoscale()
 
@@ -211,21 +232,28 @@ class PSet4():
         ans = []
         for node in path:
             ans.append((node.x, node.y))
-        print(ans) 
         return ans
 
 
 if __name__ == "__main__":
     p = PSet4()
-    corners = [(3, 7), (7, 7), (7, 3), (3, 3)]
     plan = p.solve_pddl('domain.pddl', 'problem.pddl')
     print("Plan : ", plan)
     print("Plan Length : ", len(plan))
-    p.solve_rrt(corners)
-    '''
+
     rrt_path = p.solve_rrt([()])
-    print("Path length: " + len(rrt_path))
+    print("Path: ", rrt_path)
+    print("Path length: ", len(rrt_path))
+
     '''
+    corners  = [(3, 7), (7, 7), (7, 3), (3, 3)]
+    rrt_path = p.solve_rrt(corners)
+    print("Path: ", rrt_path)
+    print("Path length: ", len(rrt_path))
+    '''
+
+
+
 
 
 
