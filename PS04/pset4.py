@@ -152,6 +152,9 @@ class PSet4():
         graph_planner  = GraphPlanner()
         plan = graph_planner.plan(graph, goal)
 
+        if plan == None:
+            return []
+
         final_plan = []
         for plan_obj in plan.data.values():
             for x in plan_obj._plan:
