@@ -35,6 +35,11 @@ class Problem3():
 						   [-.1,   1], 
 						   [  1, -.1]])
 		
+		self.P = np.array([[.9, .1], 
+						   [.2, .8], 
+						   [.3, .7],
+						   [0,   1]])
+		
 
 	def set_test_vals(self, S, A, T, discount, R, V):
 		### DO NOT CHANGE ###
@@ -88,7 +93,24 @@ class Problem3():
 if __name__ == "__main__":
 
 	p = Problem3()
+	for i in range(0, 4):
+		# get the row for action a 
+		a =  0.95 * p.T[i, 0, :] * p.P[i][0]
+		b =  0.95 * p.T[i, 1, :] * p.P[i][1]
+		ans1 = a + b
+		ans1[i] = ans1[i] - 1.0
+		c = p.R[i][0] *  p.P[i][0]
+		d = p.R[i][1] *  p.P[i][1]
+		ans2 = -1 * (c + d)
+		print(ans1)
+		print(ans2)
+
+
 	V, policy = p.value_iteration()
 	print("Value Function: " + str(V))
 	print("Policy: " + str(policy))
+
+
+
+
 
